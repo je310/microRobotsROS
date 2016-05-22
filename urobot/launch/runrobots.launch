@@ -1,0 +1,6 @@
+<launch>
+    <arg name="robots"/>
+    <node name ="communicationNode" pkg = "urobot" type="communication_node" output="screen" args = "$(arg robots)"/>
+    <node name ="activityNode" pkg = "urobot" type="activity_node" output="screen" args = "$(arg robots)"/>
+    <node name ="initNode" pkg="urobot" type="urobot_init_node" output="screen" args="$(arg robots)"/>
+</launch>
