@@ -131,9 +131,9 @@ include_directories(
 # add_dependencies(urobot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(urobot_init_node src/urobot_init_node.cpp)
-add_executable(activity_node src/activity_node.cpp)
-add_executable(communication_node src/communication_node.cpp)
+add_executable(urobot_init_node src/urobot_init_node.cpp src/RobotClass.cpp)
+add_executable(activity_node src/activity_node.cpp src/RobotClass.cpp)
+add_executable(communication_node src/communication_node.cpp src/RobotClass.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
