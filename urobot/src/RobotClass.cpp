@@ -1,72 +1,58 @@
-#include <ros/ros.h>
-#include <geometry_msgs/Point.h>
-#include <std_msgs/Int32.h>
-#include <geometry_msgs/TwistStamped.h>
+#include "RobotClass.hpp"
 
+RobotClass::RobotClass(ros::NodeHandle nh, int ID){
+    std::stringstream robotName;
+    robotName << "/robot"<< ID;
 
-class RobotClass {
-public:
+    std::stringstream  LEDStatePubString;
+    LEDStatePubString << robotName.str() << "/LEDState";
+    LEDstatePub = nh.subscribe(LEDStatePubString.str(),1,&RobotClass::LEDCB,this);
 
-    // subs and pubs for all robot specific topics.
-    ros::Subscriber LEDstatePub;
-    ros::Publisher twistPub;
-    ros::Subscriber positionSub;
-    ros::Subscriber batterySub;
-    ros::Subscriber leftSensorSub;
-    ros::Subscriber rightSensorSub;
-    ros::Subscriber backSensorSub;
+    std::stringstream  twistPubString;
+    twistPubString << robotName.str() << "/twist";
+    twistPub =  nh.advertise<geometry_msgs::TwistStamped>(twistPubString.str(),1,this);
 
-    //variables
-    std_msgs::Int32 leftSensor;
-    std_msgs::Int32 rightSensor;
-    std_msgs::Int32 backSensor;
-    std_msgs::Int32 battery;
-    geometry_msgs::Point position;
-    geometry_msgs::TwistStamped twist;
-    std_msgs::Int32 LEDState;
+    std::stringstream  positionSubString;
+    positionSubString << robotName.str() << "/position";
+    positionSub = nh.subscribe(positionSubString.str(),1,&RobotClass::positionCB,this);
 
+    std::stringstream  batterySubString;
+    batterySubString << robotName.str() << "/battery";
+    batterySub = nh.subscribe(batterySubString.str(),1,&RobotClass::batteryCB,this);
 
+    std::stringstream  leftSensorSubString;
+    leftSensorSubString << robotName.str() << "/leftSensor";
+    leftSensorSub = nh.subscribe(leftSensorSubString.str(),1,&RobotClass::leftSensorCB,this);
 
+    std::stringstream  rightSensorSubString;
+    rightSensorSubString << robotName.str() << "/rightSensor";
+    rightSensorSub = nh.subscribe(rightSensorSubString.str(),1,&RobotClass::rightSensorCB,this);
 
-    RobotClass(ros::NodeHandle nh, int ID){
-        std::string robotName("/robot");
-        robotName << ID;
+    std::stringstream  backSensorSubString;
+    backSensorSubString << robotName.str() << "/backSensor";
+    backSensorSub = nh.subscribe(backSensorSubString.str(),1, &RobotClass::backSensorCB,this);
+}
+void RobotClass::rightSensorCB(const std_msgs::Int32ConstPtr &msg){
+    RobotClass::rightSensor = *msg;
+}
 
-        std::string LEDStatePubString;
-        LEDStatePubString << robotName << "/LEDState";
-        LEDstatePub = nh.subscribe(LEDStatePubString,1,&RobotClass::LEDCB);
+void RobotClass::leftSensorCB(const std_msgs::Int32ConstPtr &msg){
+    RobotClass::leftSensor = *msg;
+}
+void RobotClass::backSensorCB(const std_msgs::Int32ConstPtr &msg){
+    RobotClass::backSensor = *msg;
+}
+void RobotClass::LEDCB(const std_msgs::Int32ConstPtr &msg){
+    RobotClass::LEDState = *msg;
+}
 
-        std::string twistPubString;
-        twistPubString << robotName << "/twist";
-        twistPub =  nh.advertise(twistPubString,1);
+void RobotClass::positionCB(const geometry_msgs::PointConstPtr &msg){
+    RobotClass::position = *msg;
+}
 
-        std::string positionSubString;
-        positionSubString << robotName << "/position";
-        positionSub = nh.subscribe(positionSubString,1,&RobotClass::positionCB);
-
-        std::string batterySubString;
-        batterySubString << robotName << "/battery";
-        batterySub = nh.subscribe(batterySubString,1,&RobotClass::batteryCB);
-
-        std::string leftSensorSubString;
-        leftSensorSubString << robotName << "/leftSensor";
-        leftSensorSub = nh.subscribe(leftSensorSubString,1,&RobotClass::leftSensorCB);
-
-        std::string rightSensorSubString;
-        rightSensorSubString << robotName << "/rightSensor";
-        rightSensorSub = nh.subscribe(rightSensorSubString,1,&RobotClass::rightSensorCB);
-
-        std::string backSensorSubString;
-        backSensorSubString << robotName << "/backSensor";
-        backSensorSub = nh.subscribe)(backSensorSubString,1, &RobotClass::backSensorCB);
-
-
-
-
-    }
-
-private:
-
-
-
-};
+void RobotClass::batteryCB(const std_msgs::Int32ConstPtr &msg){
+    RobotClass::battery = *msg;
+}
+void RobotClass::publishTwist(geometry_msgs::TwistStamped twist){
+    RobotClass::twistPub.publish(twist);
+}

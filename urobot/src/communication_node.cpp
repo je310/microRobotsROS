@@ -12,7 +12,7 @@
 #include<stdio.h>
 #include <math.h>
 
-
+#include "RobotClass.hpp"
 
 using namespace std;
 
@@ -22,6 +22,7 @@ using namespace std;
 class communication_node{
 
     ros::Subscriber isInitSub;
+    vector<RobotClass> robotInterface;
     bool isInit= 0;
     int number_robots;
     ros::NodeHandle nh_;
@@ -36,7 +37,11 @@ communication_node::communication_node(int numRobot){
     number_robots = numRobot;
     ROS_INFO("I will Communicate with %d robots",number_robots);
     isInitSub= nh_.subscribe("urobot_init_node/isInit", 1,&communication_node::isInitCB,this);
-
+    //setup and launch the rest of the activity.
+    for(int i= 0; i < number_robots; i ++){
+        RobotClass newRobot(nh_,i);
+        robotInterface.push_back(newRobot);
+    }
     //do launching of stuff here, find all the robots and give them names. When complete call the 'publishIsInit' function. This is best to hapen only once, so lauch this node last and have others wait for this signal.
 }
 
@@ -46,7 +51,7 @@ void communication_node::isInitCB(const std_msgs::BoolConstPtr& msg)
         isInit =1;
     }
 
-    //setup and launch the rest of the activity.
+
 }
 
 int main(int argc, char** argv) {

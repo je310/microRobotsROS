@@ -15,6 +15,7 @@
 #include<stdio.h>
 #include <math.h>
 #include <vector>
+#include "RobotClass.hpp"
 
 
 
@@ -22,19 +23,13 @@ using namespace std;
 
 
 // this struct should hold all the interfaces for a given robot, each node should initialise the ones that it needs to use. 
-struct robot{
-    int ID; 
-    ros::Publisher linVel;
-    ros::Publisher angVel;
-    ros::Publisher specialAction;
-    ros::Subscriber battery;
-};
+
 
 
 class init_node{
 
     ros::Publisher isInitPub;
-    vector<robot> robotInterface;
+    vector<RobotClass> robotInterface;
     int number_robots;
     ros::NodeHandle nh_;
     image_transport::ImageTransport it_;
@@ -46,16 +41,13 @@ public:
 init_node::init_node(int numRobots): it_(nh_){
     number_robots = numRobots;
     ROS_INFO("I will initialise %d robots",number_robots);
-    
-    //make a vector of the right size with pub/sub for all features. 
-    for(int i = 0; i < number_robots; i ++ ){
-        robot newRobot;
-        robotInterface.push_back(newRobot);
-    }
-    isInitPub= nh_.advertise<std_msgs::Bool>("urobot_init_node/isInit", 1);
+    isInitPub = nh_.advertise<std_msgs::Bool>("/isInit",1,this);
 
     //do launching of stuff here///////////////////////////////////////////////
-    
+    for(int i= 0; i < number_robots; i ++){
+        RobotClass newRobot(nh_,i);
+        robotInterface.push_back(newRobot);
+    }
     
     
     
