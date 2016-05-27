@@ -20,7 +20,7 @@ public:
     std_msgs::Int32 backSensor;
     std_msgs::Int32 battery;
     geometry_msgs::Point position;
-    geometry_msgs::TwistStamped twistIn;
+    geometry_msgs::Twist twistIn;
     geometry_msgs::TwistStamped twistOut;
     std_msgs::Int32 LEDState;
 
@@ -31,7 +31,7 @@ public:
 
     //pub functions
     void publishTwist(geometry_msgs::TwistStamped twist);
-
+    geometry_msgs::Twist getTwist();
 private:
     void rightSensorCB(const std_msgs::Int32ConstPtr &msg);
     void leftSensorCB(const std_msgs::Int32ConstPtr &msg);
@@ -40,6 +40,7 @@ private:
     void positionCB(const geometry_msgs::PointConstPtr &msg);
     void batteryCB(const std_msgs::Int32ConstPtr &msg);
     void twistCB(const geometry_msgs::TwistStampedConstPtr &msg);
+
     // subs and pubs for all robot specific topics.
     ros::Subscriber LEDstatePub;
     ros::Publisher twistPub;

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include<stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "RobotClass.hpp"
 #include "rosToInterface.hpp"
@@ -79,12 +80,17 @@ void activity_node::joyCB(const sensor_msgs::JoyConstPtr& msg){
         thisTwist.twist.linear = linear;
         thisTwist.twist.angular = angular;
         thisTwist.header.stamp = msg->header.stamp;
-        robotInterface.at(i).twistOut = thisTwist;
-        robotInterface.at(i).publishTwist(robotInterface.at(i).twistOut);
+        //robotInterface.at(i).twistOut = thisTwist;
+        robotInterface.at(i).publishTwist(thisTwist);
+        ros::spinOnce();
     }
+    usleep(1000);
+    ros::spinOnce();
+    usleep(100000);
     std_msgs::Int32 pushType;
     pushType.data =CmdLINANG;
     instructionPush.publish(pushType);
+    ros::spinOnce();
 }
 
 

@@ -11,7 +11,7 @@ RobotClass::RobotClass(ros::NodeHandle nh, int ID,bool shouldListen){
     std::stringstream  twistPubString;
     twistPubString << robotName.str() << "/twist";
     twistPub =  nh.advertise<geometry_msgs::TwistStamped>(twistPubString.str(),1,this);
-    if(shouldListen)
+    //if(shouldListen)
         twistSub = nh.subscribe(twistPubString.str(),1,&RobotClass::twistCB,this);
 
     std::stringstream  positionSubString;
@@ -35,30 +35,35 @@ RobotClass::RobotClass(ros::NodeHandle nh, int ID,bool shouldListen){
     backSensorSub = nh.subscribe(backSensorSubString.str(),1, &RobotClass::backSensorCB,this);
 }
 void RobotClass::rightSensorCB(const std_msgs::Int32ConstPtr &msg){
-    RobotClass::rightSensor = *msg;
+    rightSensor = *msg;
 }
 
 void RobotClass::leftSensorCB(const std_msgs::Int32ConstPtr &msg){
-    RobotClass::leftSensor = *msg;
+    leftSensor = *msg;
 }
 void RobotClass::backSensorCB(const std_msgs::Int32ConstPtr &msg){
-    RobotClass::backSensor = *msg;
+    backSensor = *msg;
 }
 void RobotClass::LEDCB(const std_msgs::Int32ConstPtr &msg){
-    RobotClass::LEDState = *msg;
+    LEDState = *msg;
 }
 
 void RobotClass::positionCB(const geometry_msgs::PointConstPtr &msg){
-    RobotClass::position = *msg;
+    position = *msg;
 }
 
 void RobotClass::batteryCB(const std_msgs::Int32ConstPtr &msg){
-    RobotClass::battery = *msg;
+    battery = *msg;
 }
 void RobotClass::publishTwist(geometry_msgs::TwistStamped twist){
     RobotClass::twistPub.publish(twist);
 }
 void RobotClass::twistCB(const geometry_msgs::TwistStampedConstPtr &msg){
-    RobotClass::twistIn = *msg;
+    twistIn = msg->twist;
+    ROS_INFO("in class %d",this);
+}
+
+geometry_msgs::Twist RobotClass::getTwist(){
+    return twistIn;
 }
 

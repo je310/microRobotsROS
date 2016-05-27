@@ -39,7 +39,7 @@ class communication_node{
 public:
     communication_node(int numRobot);
     void isInitCB(const std_msgs::BoolConstPtr& msg);
-    void instructionPushCB(const std_msgs::Int32& msg);
+    void instructionPushCB(const std_msgs::Int32ConstPtr& msg);
     int set_interface_attribs (int fd, int speed, int parity);
     void set_blocking (int fd, int should_block);
     void sendInstruction(instructionPack thisInstruction);
@@ -75,28 +75,31 @@ void communication_node::isInitCB(const std_msgs::BoolConstPtr& msg)
 
 }
 
-void communication_node::instructionPushCB(const std_msgs::Int32& msg)
+void communication_node::instructionPushCB(const std_msgs::Int32ConstPtr& msg)
 {
-    int instructionType = msg.data;
+    ROS_INFO("pushing some data");
+    int instructionType = msg->data;
     uint8_t ID = rand();
     switch (instructionType){
     case CmdLINANG:
         for(int i = 0; i < robotInterface.size(); i ++){
+
+
             instructionPack thisInstruction;
             thisInstruction.instructionType = CmdLINANG;
             thisInstruction.instructionID = ID;
             //LinAng type has a 4bit signed lin and ang put into one 8bit type; giving 8 speeds of all F/B/L/R
-
-            float lin =  robotInterface.at(i).twistIn.twist.linear.x;// scale a linear normalised value up to 127;
+            geometry_msgs::Twist thisTwist = robotInterface.at(i).getTwist();
+            float lin =  robotInterface.at(i).twistIn.linear.x;// scale a linear normalised value up to 127;
             int8_t intLin = lin;
-            float ang =  robotInterface.at(i).twistIn.twist.angular.z;
+            float ang =  robotInterface.at(i).twistIn.angular.z;
             int8_t intAng = ang;
             intLin &= 0b11110000;
             intAng = intAng >> 4;
             int8_t result = intLin | intAng;
             thisInstruction.value1 = result;
             thisInstruction.robotID = i;
-            ROS_INFO("hello some data %d, %f ,%f",result,lin,ang);
+            ROS_INFO("hello some data %d, %f ,%f",result,robotInterface.at(i).twistIn.linear.x,ang);
             communication_node::sendInstruction(thisInstruction);
 
 
