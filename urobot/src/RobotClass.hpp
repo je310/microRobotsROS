@@ -20,13 +20,14 @@ public:
     std_msgs::Int32 backSensor;
     std_msgs::Int32 battery;
     geometry_msgs::Point position;
-    geometry_msgs::TwistStamped twist;
+    geometry_msgs::TwistStamped twistIn;
+    geometry_msgs::TwistStamped twistOut;
     std_msgs::Int32 LEDState;
 
 
 
     //constructor
-    RobotClass(ros::NodeHandle nh, int ID);
+    RobotClass(ros::NodeHandle nh, int ID, bool shouldListen);
 
     //pub functions
     void publishTwist(geometry_msgs::TwistStamped twist);
@@ -38,10 +39,11 @@ private:
     void LEDCB(const std_msgs::Int32ConstPtr &msg);
     void positionCB(const geometry_msgs::PointConstPtr &msg);
     void batteryCB(const std_msgs::Int32ConstPtr &msg);
-
+    void twistCB(const geometry_msgs::TwistStampedConstPtr &msg);
     // subs and pubs for all robot specific topics.
     ros::Subscriber LEDstatePub;
     ros::Publisher twistPub;
+    ros::Subscriber twistSub;
     ros::Subscriber positionSub;
     ros::Subscriber batterySub;
     ros::Subscriber leftSensorSub;

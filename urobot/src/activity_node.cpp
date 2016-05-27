@@ -1,6 +1,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <sensor_msgs/Joy.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -13,6 +14,7 @@
 #include <math.h>
 
 #include "RobotClass.hpp"
+#include "rosToInterface.hpp"
 
 using namespace std;
 
@@ -23,6 +25,8 @@ using namespace std;
 class activity_node{
 
     ros::Subscriber isInitSub;
+    ros::Subscriber joySub;
+    ros::Publisher instructionPush;
     bool isInit= 0;
     vector<RobotClass> robotInterface;
     int number_robots;
@@ -31,7 +35,7 @@ class activity_node{
 public:
     activity_node(int robotNum);
     void isInitCB(const std_msgs::BoolConstPtr& msg);
-
+    void joyCB(const sensor_msgs::JoyConstPtr& msg);
 
 };
 
@@ -39,11 +43,12 @@ activity_node::activity_node(int robotNum){
     number_robots = robotNum;
     ROS_INFO("there are %d robots in this activity",number_robots);
     //make a vector of the right size with pub/sub for all features.
-
+    instructionPush = nh_.advertise<std_msgs::Int32>("/instructionPush",1,this);
+    joySub = nh_.subscribe("/joy",1,&activity_node::joyCB,this);
     isInitSub= nh_.subscribe("urobot_init_node/isInit", 1,&activity_node::isInitCB,this);
     //do launching of stuff here, find all the robots and give them names. When complete call the 'publishIsInit' function. This is best to hapen only once, so lauch this node last and have others wait for this signal.
     for(int i= 0; i < number_robots; i ++){
-        RobotClass newRobot(nh_,i);
+        RobotClass newRobot(nh_,i,0);
         robotInterface.push_back(newRobot);
     }
 
@@ -59,6 +64,27 @@ void activity_node::isInitCB(const std_msgs::BoolConstPtr& msg)
     }
 
     //setup and launch the rest of the activity.
+}
+
+//here should do something nice to take controll of all the buttons.
+void activity_node::joyCB(const sensor_msgs::JoyConstPtr& msg){
+    for(int i = 0; i < robotInterface.size(); i++){
+        geometry_msgs::Vector3 linear;
+        linear.x = msg->axes.at(1);
+        geometry_msgs::Vector3 angular;
+        angular.z = msg->axes.at(0);
+        geometry_msgs::TwistStamped thisTwist;
+        ROS_INFO("%d , %f",0,linear.x);
+        ROS_INFO("%d , %f",1,angular.z );
+        thisTwist.twist.linear = linear;
+        thisTwist.twist.angular = angular;
+        thisTwist.header.stamp = msg->header.stamp;
+        robotInterface.at(i).twistOut = thisTwist;
+        robotInterface.at(i).publishTwist(robotInterface.at(i).twistOut);
+    }
+    std_msgs::Int32 pushType;
+    pushType.data =CmdLINANG;
+    instructionPush.publish(pushType);
 }
 
 

@@ -1,6 +1,6 @@
 #include "RobotClass.hpp"
 
-RobotClass::RobotClass(ros::NodeHandle nh, int ID){
+RobotClass::RobotClass(ros::NodeHandle nh, int ID,bool shouldListen){
     std::stringstream robotName;
     robotName << "/robot"<< ID;
 
@@ -11,6 +11,8 @@ RobotClass::RobotClass(ros::NodeHandle nh, int ID){
     std::stringstream  twistPubString;
     twistPubString << robotName.str() << "/twist";
     twistPub =  nh.advertise<geometry_msgs::TwistStamped>(twistPubString.str(),1,this);
+    if(shouldListen)
+        twistSub = nh.subscribe(twistPubString.str(),1,&RobotClass::twistCB,this);
 
     std::stringstream  positionSubString;
     positionSubString << robotName.str() << "/position";
@@ -56,3 +58,7 @@ void RobotClass::batteryCB(const std_msgs::Int32ConstPtr &msg){
 void RobotClass::publishTwist(geometry_msgs::TwistStamped twist){
     RobotClass::twistPub.publish(twist);
 }
+void RobotClass::twistCB(const geometry_msgs::TwistStampedConstPtr &msg){
+    RobotClass::twistIn = *msg;
+}
+

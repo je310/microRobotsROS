@@ -45,7 +45,7 @@ init_node::init_node(int numRobots): it_(nh_){
 
     //do launching of stuff here///////////////////////////////////////////////
     for(int i= 0; i < number_robots; i ++){
-        RobotClass newRobot(nh_,i);
+        RobotClass newRobot(nh_,i,0);
         robotInterface.push_back(newRobot);
     }
     

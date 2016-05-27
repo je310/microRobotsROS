@@ -14,3 +14,8 @@ cd ~/uRobot_ws/
 catkin_make 
 
 roslaunch urobot runrobots.launch
+
+sudo apt-get install libusb-dev
+sudo apt-get install libspnav-dev (needed for joy drivers) 
+
+We claim no ownership of the joystick drivers,see https://github.com/ros-drivers/joystick_drivers.git

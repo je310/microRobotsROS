@@ -133,7 +133,7 @@ include_directories(
 ## Declare a C++ executable
 add_executable(urobot_init_node src/urobot_init_node.cpp src/RobotClass.cpp src/RobotClass.hpp)
 add_executable(activity_node src/activity_node.cpp src/RobotClass.cpp src/RobotClass.hpp)
-add_executable(communication_node src/communication_node.cpp src/RobotClass.cpp src/RobotClass.hpp)
+add_executable(communication_node src/communication_node.cpp src/RobotClass.cpp src/RobotClass.hpp src/rosToInterface.hpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
