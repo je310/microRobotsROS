@@ -36,6 +36,7 @@ void addEntry(instructionUnion thisUnion){
   if(thisUnion.pack.robotID == 0){
       commandQ[0] = thisUnion.pack.instructionType;
       currentCID = thisUnion.pack.instructionID;
+      
   }
   commandQ[thisUnion.pack.robotID + 1] = thisUnion.pack.value1;
   if(thisUnion.pack.robotID == numberOfRobots){
@@ -46,12 +47,24 @@ void addEntry(instructionUnion thisUnion){
 void sendIR(){
   switch(commandQ[0]){
     case CmdLINANG:
-    int lin = commandQ[1] & 0b11110000;
-    int ang = commandQ[1] & 0b00001111;
-    ang = ang <<4;
-    if(lin > 0){
+    digitalWrite(LED, HIGH);
+    int8_t lin = commandQ[1] & 0b11110000;
+    int8_t ang = commandQ[1] & 0b00001111;
+    lin = lin >> 4;
+    if(ang & 0b00001000){ //extend the top bit to recover 2s comp.
+      ang = ang | 0b11110000;
+    }
+    if(lin == 1){
       irsend.sendSony(0xFF9867, 32);
-      digitalWrite(LED,HIGH);
+    }
+    if(lin == - 1){
+      irsend.sendSony(0xFF38C7, 32);
+    }
+    if(ang == 1){
+      irsend.sendSony(0xFF30CF, 32);
+    }
+    if(ang == - 1){
+      irsend.sendSony(0xFF7A85, 32);
     }
   };
 }

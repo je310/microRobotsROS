@@ -86,18 +86,30 @@ void communication_node::instructionPushCB(const std_msgs::Int32ConstPtr& msg)
 
 
             instructionPack thisInstruction;
-            thisInstruction.instructionType = CmdLINANG;
+            thisInstruction.instructionType =  (uint8_t)CmdLINANG;
             thisInstruction.instructionID = ID;
             //LinAng type has a 4bit signed lin and ang put into one 8bit type; giving 8 speeds of all F/B/L/R
             geometry_msgs::Twist thisTwist = robotInterface.at(i)->getTwist();
             float lin =  robotInterface.at(i)->twistIn.linear.x;// scale a linear normalised value up to 127;
-            int8_t intLin = lin;
+            int8_t intLin = 16*(int8_t)lin;
             float ang =  robotInterface.at(i)->twistIn.angular.z;
-            int8_t intAng = ang;
+            int8_t intAng = 16*(int8_t)ang;
             intLin &= 0b11110000;
             intAng = intAng >> 4;
+            intAng &= 0b00001111;
             int8_t result = intLin | intAng;
             thisInstruction.value1 = result;
+            ///ARDUIO debug
+            int8_t Alin = result & 0b11110000;
+            int8_t Aang = result & 0b00001111;
+            Alin = Alin >> 4;
+            if(Aang & 0b00001000){ //extend the top bit to recover 2s comp.
+              Aang = Aang | 0b11110000;
+            }
+
+            /////
+            int8_t ardLin =result & 0b11110000;
+            int8_t ardAng;
             thisInstruction.robotID = i;
             ROS_INFO("hello some data %d, %f ,%f",result,robotInterface.at(i)->twistIn.linear.x,ang);
             communication_node::sendInstruction(thisInstruction);

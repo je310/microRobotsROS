@@ -69,27 +69,33 @@ void activity_node::isInitCB(const std_msgs::BoolConstPtr& msg)
 
 //here should do something nice to take controll of all the buttons.
 void activity_node::joyCB(const sensor_msgs::JoyConstPtr& msg){
-    for(int i = 0; i < robotInterface.size(); i++){
-        geometry_msgs::Vector3 linear;
-        linear.x = msg->axes.at(1);
-        geometry_msgs::Vector3 angular;
-        angular.z = msg->axes.at(0);
-        geometry_msgs::TwistStamped thisTwist;
-        ROS_INFO("%d , %f",0,linear.x);
-        ROS_INFO("%d , %f",1,angular.z );
-        thisTwist.twist.linear = linear;
-        thisTwist.twist.angular = angular;
-        thisTwist.header.stamp = msg->header.stamp;
-        //robotInterface.at(i).twistOut = thisTwist;
-        robotInterface.at(i).publishTwist(thisTwist);
+    static float oldLin = 0;
+    static float oldAng = 0;
+    geometry_msgs::Vector3 linear;
+    linear.x = msg->axes.at(1);
+    geometry_msgs::Vector3 angular;
+    angular.z = msg->axes.at(0);
+    if(oldLin!=linear.x || oldAng != angular.z){
+        for(int i = 0; i < robotInterface.size(); i++){
+            geometry_msgs::TwistStamped thisTwist;
+            ROS_INFO("%d , %f",0,linear.x);
+            ROS_INFO("%d , %f",1,angular.z );
+            thisTwist.twist.linear = linear;
+            thisTwist.twist.angular = angular;
+            thisTwist.header.stamp = msg->header.stamp;
+            //robotInterface.at(i).twistOut = thisTwist;
+            robotInterface.at(i).publishTwist(thisTwist);
+            ros::spinOnce();
+        }
+        usleep(1000);
         ros::spinOnce();
+        usleep(100000);
+        std_msgs::Int32 pushType;
+        pushType.data =CmdLINANG;
+        oldLin = linear.x;
+        oldAng = angular.z;
+        instructionPush.publish(pushType);
     }
-    usleep(1000);
-    ros::spinOnce();
-    usleep(100000);
-    std_msgs::Int32 pushType;
-    pushType.data =CmdLINANG;
-    instructionPush.publish(pushType);
     ros::spinOnce();
 }
 
