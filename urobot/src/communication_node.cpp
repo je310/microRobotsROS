@@ -30,7 +30,7 @@ class communication_node{
     int fd;
     ros::Subscriber isInitSub;
     ros::Subscriber instructionPush;
-    vector<RobotClass> robotInterface;
+    vector<RobotClass*> robotInterface;
     char *portname= "/dev/ttyACM0";
     bool isInit= 0;
     int number_robots;
@@ -60,7 +60,7 @@ communication_node::communication_node(int numRobot){
     instructionPush = nh_.subscribe("instructionPush",1,&communication_node::instructionPushCB,this);
     //setup and launch the rest of the activity.
     for(int i= 0; i < number_robots; i ++){
-        RobotClass newRobot(nh_,i,1);
+        RobotClass* newRobot = new RobotClass(nh_,i,1);
         robotInterface.push_back(newRobot);
     }
     //do launching of stuff here, find all the robots and give them names. When complete call the 'publishIsInit' function. This is best to hapen only once, so lauch this node last and have others wait for this signal.
@@ -89,17 +89,17 @@ void communication_node::instructionPushCB(const std_msgs::Int32ConstPtr& msg)
             thisInstruction.instructionType = CmdLINANG;
             thisInstruction.instructionID = ID;
             //LinAng type has a 4bit signed lin and ang put into one 8bit type; giving 8 speeds of all F/B/L/R
-            geometry_msgs::Twist thisTwist = robotInterface.at(i).getTwist();
-            float lin =  robotInterface.at(i).twistIn.linear.x;// scale a linear normalised value up to 127;
+            geometry_msgs::Twist thisTwist = robotInterface.at(i)->getTwist();
+            float lin =  robotInterface.at(i)->twistIn.linear.x;// scale a linear normalised value up to 127;
             int8_t intLin = lin;
-            float ang =  robotInterface.at(i).twistIn.angular.z;
+            float ang =  robotInterface.at(i)->twistIn.angular.z;
             int8_t intAng = ang;
             intLin &= 0b11110000;
             intAng = intAng >> 4;
             int8_t result = intLin | intAng;
             thisInstruction.value1 = result;
             thisInstruction.robotID = i;
-            ROS_INFO("hello some data %d, %f ,%f",result,robotInterface.at(i).twistIn.linear.x,ang);
+            ROS_INFO("hello some data %d, %f ,%f",result,robotInterface.at(i)->twistIn.linear.x,ang);
             communication_node::sendInstruction(thisInstruction);
 
 

@@ -60,7 +60,7 @@ void RobotClass::publishTwist(geometry_msgs::TwistStamped twist){
 }
 void RobotClass::twistCB(const geometry_msgs::TwistStampedConstPtr &msg){
     twistIn = msg->twist;
-    ROS_INFO("in class %d",this);
+     ROS_INFO("in class %d",this);
 }
 
 geometry_msgs::Twist RobotClass::getTwist(){
