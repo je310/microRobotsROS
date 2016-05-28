@@ -87,9 +87,7 @@ void activity_node::joyCB(const sensor_msgs::JoyConstPtr& msg){
             robotInterface.at(i).publishTwist(thisTwist);
             ros::spinOnce();
         }
-        usleep(1000);
         ros::spinOnce();
-        usleep(100000);
         std_msgs::Int32 pushType;
         pushType.data =CmdLINANG;
         oldLin = linear.x;
