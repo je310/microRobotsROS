@@ -1,6 +1,7 @@
 #include "RobotClass.hpp"
 
 RobotClass::RobotClass(ros::NodeHandle nh, int ID,bool shouldListen){
+    myID = ID;
     std::stringstream robotName;
     robotName << "/robot"<< ID;
 
@@ -67,3 +68,33 @@ geometry_msgs::Twist RobotClass::getTwist(){
     return twistIn;
 }
 
+void RobotClass::publishTF(cv::Point2f led, cv::Point2f head, ros::Time time){
+    static tf::TransformBroadcaster broad;
+    tf::Transform transform;
+    cv::Point2f middle = 0.55*led + 0.45*head;
+      transform.setOrigin( tf::Vector3(middle.x, middle.y, 0.0) );
+      tf::Quaternion q;
+      q.setRPY(0, 0, getAngle(led,head));
+      transform.setRotation(q);
+      std::stringstream robotName;
+      robotName << "robot"<< myID;
+      std::string name = robotName.str();
+      broad.sendTransform(tf::StampedTransform(transform, time, "world", robotName.str()));
+    
+}
+
+float RobotClass::getAngle(cv::Point2f led, cv::Point2f head){
+    const float PI = 3.14159f;
+
+    float x = head.x-led.x;
+    float y = head.y - led.y;
+
+    // atan2 receives first Y second X
+    double angle = atan2(y, x);
+    if (angle < 0) angle += 2*PI;
+    return angle;
+    //
+    
+    
+    
+}

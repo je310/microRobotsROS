@@ -7,6 +7,9 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <string.h>
 #include <sstream>
+#include <tf/transform_broadcaster.h>
+
+#include <cv.hpp>
 
 
 class RobotClass {
@@ -23,6 +26,9 @@ public:
     geometry_msgs::Twist twistIn;
     geometry_msgs::TwistStamped twistOut;
     std_msgs::Int32 LEDState;
+    tf::TransformBroadcaster* br;
+    int myID;
+
 
 
 
@@ -32,6 +38,9 @@ public:
     //pub functions
     void publishTwist(geometry_msgs::TwistStamped twist);
     geometry_msgs::Twist getTwist();
+    
+    void publishTF(cv::Point2f led, cv::Point2f head, ros::Time time);
+    float getAngle(cv::Point2f led, cv::Point2f head);
 private:
     void rightSensorCB(const std_msgs::Int32ConstPtr &msg);
     void leftSensorCB(const std_msgs::Int32ConstPtr &msg);

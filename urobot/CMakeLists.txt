@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cv_bridge
   image_transport
+camera_info_manager
+tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -134,6 +136,8 @@ include_directories(
 add_executable(urobot_init_node src/urobot_init_node.cpp src/RobotClass.cpp src/RobotClass.hpp)
 add_executable(activity_node src/activity_node.cpp src/RobotClass.cpp src/RobotClass.hpp)
 add_executable(communication_node src/communication_node.cpp src/RobotClass.cpp src/RobotClass.hpp src/rosToInterface.hpp)
+add_executable(location_node src/location_node.cpp src/RobotClass.cpp src/RobotClass.hpp )
+add_executable(camera_node src/camera_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -149,6 +153,14 @@ add_executable(communication_node src/communication_node.cpp src/RobotClass.cpp 
  )
 
  target_link_libraries(communication_node
+   ${catkin_LIBRARIES}
+ )
+
+ target_link_libraries(location_node
+   ${catkin_LIBRARIES}
+ )
+
+ target_link_libraries(camera_node
    ${catkin_LIBRARIES}
  )
 
