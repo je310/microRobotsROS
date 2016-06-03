@@ -176,14 +176,14 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
 
 
          // Set up the detector with default parameters.
-         cv::SimpleBlobDetector detector(params);
+         cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
          // Detect blobs.
          std::vector<cv::KeyPoint> Fkeypoints,Lkeypoints;
 
 
-         detector.detect(  FimgThresholded, Fkeypoints);
-         detector.detect(  LimgThresholded, Lkeypoints);
+         detector->detect(  FimgThresholded, Fkeypoints);
+         detector->detect(  LimgThresholded, Lkeypoints);
 
          vector<location_node::pairs> ourPairs = location_node::findPairs(Fkeypoints, Lkeypoints, radius);
 
