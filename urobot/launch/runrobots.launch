@@ -1,7 +1,7 @@
 <launch>
     <arg name="robots"/>
-    <node name ="cameraNode" pkg= "urobot" type="camera_node" output = "screen" />
-
+    <node name ="cameraNode" pkg= "urobot" type="camera_node"/>
+   <node name ="locationNode" pkg= "urobot" type="location_node" output = "screen" args = "$(arg robots) n" />
     <node name ="joynode" pkg= "joy" type= "joy_node" output = "screen"/>
     <node name ="communicationNode" pkg= "urobot" type= "communication_node" output="screen" args = "$(arg robots)"/>
     <node name ="activityNode" pkg = "urobot" type="activity_node" output="screen" args = "$(arg robots)"/>
