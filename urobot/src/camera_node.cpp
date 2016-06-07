@@ -77,7 +77,7 @@ camera_node::camera_node(int Hz):it_(nh_){
 
     camera =it_.advertiseCamera("/camera",1);
     cv::Mat image,imgHSV,LimgThresholded,FimgThresholded, extracted;
-    image = cv::imread("/home/josh/uRobot_ws/src/urobot/src/wellLit.jpg");
+    image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
     if(! image.data )                              // Check for invalid input
     {
         cout <<  "Could not open or find the image" << std::endl ;

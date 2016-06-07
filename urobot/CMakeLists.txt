@@ -10,9 +10,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cv_bridge
   image_transport
-camera_info_manager
+  camera_info_manager
 tf
 )
+
+find_package(camera_info_manager REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

@@ -66,8 +66,10 @@ class location_node{
 
     int radius = 46; // should be initialised to the number of pixels between the front marker and the led.
 
+    bool debug = 1;
+
 public:
-    location_node(int robotNum);
+    location_node(int robotNum, char* argin);
     void isInitCB(const std_msgs::BoolConstPtr& msg);
     void joyCB(const sensor_msgs::JoyConstPtr& msg);
     void imageCB(const sensor_msgs::ImageConstPtr& msg);
@@ -75,8 +77,11 @@ public:
     float findDistance(cv::Point2f A,cv::Point2f B);
 };
 
-location_node::location_node(int robotNum):it_(nh_){
-    camera = it_.subscribe("/camera_image",1,&location_node::imageCB,this);
+location_node::location_node(int robotNum, char* argin):it_(nh_){
+    if (*argin != 'y'){
+        debug= 0;
+    }
+    camera = it_.subscribe("/camera",1,&location_node::imageCB,this);
     number_robots = robotNum;
     ROS_INFO("there are %d robots in this location system",number_robots);
     //make a vector of the right size with pub/sub for all features.
@@ -93,7 +98,7 @@ location_node::location_node(int robotNum):it_(nh_){
 
     // Filter by Area.
     params.filterByArea =false;
-    params.minArea = 5;
+    params.minArea = 2;
 
     // Filter by Circularity
     params.filterByCircularity = false;
@@ -112,14 +117,14 @@ location_node::location_node(int robotNum):it_(nh_){
     cv::namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
    //imshow( "Display window", image );
    //Create trackbars in "Control" window
-    cvCreateTrackbar("LowH", "Control", &FLowH, 255); //Hue (0 - 179)
-    cvCreateTrackbar("HighH", "Control", &FHighH, 255);
+    cvCreateTrackbar("FLowH", "Control", &FLowH, 179); //Hue (0 - 179)
+    cvCreateTrackbar("FHighH", "Control", &FHighH, 179);
 
-     cvCreateTrackbar("LowS", "Control", &FLowS, 255); //Saturation (0 - 255)
-    cvCreateTrackbar("HighS", "Control", &FHighS, 255);
+     cvCreateTrackbar("FLowS", "Control", &FLowS, 255); //Saturation (0 - 255)
+    cvCreateTrackbar("FHighS", "Control", &FHighS, 255);
 
-     cvCreateTrackbar("LowV", "Control", &FLowV, 255); //Value (0 - 255)
-    cvCreateTrackbar("HighV", "Control", &FHighV, 255);
+     cvCreateTrackbar("FLowV", "Control", &FLowV, 255); //Value (0 - 255)
+    cvCreateTrackbar("FHighV", "Control", &FHighV, 255);
 
     cvCreateTrackbar("LLowH", "Control", &LLowH, 179); //Hue (0 - 179)
     cvCreateTrackbar("LHighH", "Control", &LHighH, 179);
@@ -129,6 +134,7 @@ location_node::location_node(int robotNum):it_(nh_){
 
      cvCreateTrackbar("LLowV", "Control", &LLowV, 255); //Value (0 - 255)
     cvCreateTrackbar("LHighV", "Control", &LHighV, 255);
+
 
     cvCreateTrackbar("radius", "Control", &radius, 255);
 
@@ -167,7 +173,8 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
         cv::inRange(imgHSV, cv::Scalar(FLowH, FLowS, FLowV), cv::Scalar(FHighH,FHighS, FHighV), FimgThresholded); //Threshold the image
         cv::inRange(imgHSV, cv::Scalar(LLowH, LLowS, LLowV), cv::Scalar(LHighH,LHighS, LHighV), LimgThresholded); //Threshold the image
         //morphological opening (remove small objects from the foreground)
-        int erodeVal = 5;
+        int erodeVal = 1;
+        if(erodeVal !=0){
          cv::erode(FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
          cv::dilate( FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
          cv::erode(LimgThresholded, LimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
@@ -178,47 +185,48 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
          cv::erode(FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
          cv::dilate( LimgThresholded, LimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
          cv::erode(LimgThresholded, LimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
-
+        }
 
          cv::threshold(FimgThresholded, FimgThresholded, 0.5, 255,cv::THRESH_BINARY_INV);
          cv::threshold(LimgThresholded, LimgThresholded, 0.5, 255,cv::THRESH_BINARY_INV);
 
 
          // Set up the detector with default parameters.
-         cv::SimpleBlobDetector detector(params);
+         cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
 
          // Detect blobs.
          std::vector<cv::KeyPoint> Fkeypoints,Lkeypoints;
 
 
-         detector.detect(  FimgThresholded, Fkeypoints);
-         detector.detect(  LimgThresholded, Lkeypoints);
+         detector->detect(  FimgThresholded, Fkeypoints);
+         detector->detect(  LimgThresholded, Lkeypoints);
 
          vector<location_node::pairs> ourPairs = location_node::findPairs(Fkeypoints, Lkeypoints, radius);
 
          cv::Mat im_with_keypoints;
          cv::drawKeypoints( image, Fkeypoints, im_with_keypoints, cv::Scalar(255,255,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
          cv::drawKeypoints( im_with_keypoints, Lkeypoints, im_with_keypoints, cv::Scalar(0,255,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-         for(int i = 0; i < ourPairs.size() && i < robotInterface.size(); i++){
+         for(int i = 0; i < ourPairs.size() && i < number_robots; i++){
              if(ourPairs.at(i).error <130){
-
+if(debug){
                  cv::circle(im_with_keypoints, Lkeypoints.at(ourPairs.at(i).led).pt, radius, cv::Scalar(0,0,255) );
 
 
                  line(im_with_keypoints, Lkeypoints.at(ourPairs.at(i).led).pt, Fkeypoints.at(ourPairs.at(i).head).pt, cv::Scalar(255,0,255));
                  cv::Point2f centre = 0.55*Lkeypoints.at(ourPairs.at(i).led).pt + 0.45*Fkeypoints.at(ourPairs.at(i).head).pt;
                  cv::circle(im_with_keypoints, centre, 3, cv::Scalar(0,0,255) );
+}
                  //get robot IDS here. 
                  robotInterface.at(i)->publishTF(Lkeypoints.at(ourPairs.at(i).led).pt, Fkeypoints.at(ourPairs.at(i).head).pt, msg->header.stamp);
                  
              }
          }
-
+if(debug){
          // Show blobs
          if(ourPairs.size() > 0) cv::imshow("keypoints", im_with_keypoints );
          cv::imshow("heads", FimgThresholded );
          cv::imshow("leds", LimgThresholded );
-         cv::imshow("image",image);
+}
         ////// end of image testing.
         cv::waitKey(1);
 
@@ -262,7 +270,7 @@ int main(int argc, char** argv) {
 
     //ros setup
     ros::init(argc, argv, "location_node");
-    location_node LN(atoi(argv[1]));
+    location_node LN(atoi(argv[1]),argv[2]);
     ros::spin();
     return 0;
 }
