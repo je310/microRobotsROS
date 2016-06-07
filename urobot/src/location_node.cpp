@@ -41,22 +41,22 @@ class location_node{
         float error;
     };
 
-    int FLowH = 0;
-    int FHighH = 45;
+    int FLowH = 162;
+    int FHighH = 255;
 
-     int FLowS = 55;
-    int FHighS = 255;
+     int FLowS = 124;
+    int FHighS =255;
 
-     int FLowV = 102;
+     int FLowV = 73;
     int FHighV = 255;
 
-    int LLowH = 100;
-    int LHighH = 164;
+    int LLowH = 0;
+    int LHighH = 104;
 
-     int LLowS = 44;
-    int LHighS = 182;
+     int LLowS = 0;
+    int LHighS = 255;
 
-     int LLowV = 155;
+     int LLowV = 71;
     int LHighV = 255;
 
     // Setup SimpleBlobDetector parameters.
@@ -76,7 +76,7 @@ public:
 };
 
 location_node::location_node(int robotNum):it_(nh_){
-    camera = it_.subscribe("/camera",1,&location_node::imageCB,this);
+    camera = it_.subscribe("/camera_image",1,&location_node::imageCB,this);
     number_robots = robotNum;
     ROS_INFO("there are %d robots in this location system",number_robots);
     //make a vector of the right size with pub/sub for all features.
@@ -112,14 +112,23 @@ location_node::location_node(int robotNum):it_(nh_){
     cv::namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
    //imshow( "Display window", image );
    //Create trackbars in "Control" window
-    cvCreateTrackbar("LowH", "Control", &FLowH, 179); //Hue (0 - 179)
-    cvCreateTrackbar("HighH", "Control", &FHighH, 179);
+    cvCreateTrackbar("LowH", "Control", &FLowH, 255); //Hue (0 - 179)
+    cvCreateTrackbar("HighH", "Control", &FHighH, 255);
 
      cvCreateTrackbar("LowS", "Control", &FLowS, 255); //Saturation (0 - 255)
     cvCreateTrackbar("HighS", "Control", &FHighS, 255);
 
      cvCreateTrackbar("LowV", "Control", &FLowV, 255); //Value (0 - 255)
     cvCreateTrackbar("HighV", "Control", &FHighV, 255);
+
+    cvCreateTrackbar("LLowH", "Control", &LLowH, 179); //Hue (0 - 179)
+    cvCreateTrackbar("LHighH", "Control", &LHighH, 179);
+
+     cvCreateTrackbar("LLowS", "Control", &LLowS, 255); //Saturation (0 - 255)
+    cvCreateTrackbar("LHighS", "Control", &LHighS, 255);
+
+     cvCreateTrackbar("LLowV", "Control", &LLowV, 255); //Value (0 - 255)
+    cvCreateTrackbar("LHighV", "Control", &LHighV, 255);
 
     cvCreateTrackbar("radius", "Control", &radius, 255);
 
@@ -190,7 +199,7 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
          cv::Mat im_with_keypoints;
          cv::drawKeypoints( image, Fkeypoints, im_with_keypoints, cv::Scalar(255,255,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
          cv::drawKeypoints( im_with_keypoints, Lkeypoints, im_with_keypoints, cv::Scalar(0,255,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-         for(int i = 0; i < ourPairs.size(); i++){
+         for(int i = 0; i < ourPairs.size() && i < robotInterface.size(); i++){
              if(ourPairs.at(i).error <130){
 
                  cv::circle(im_with_keypoints, Lkeypoints.at(ourPairs.at(i).led).pt, radius, cv::Scalar(0,0,255) );
@@ -209,6 +218,7 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
          if(ourPairs.size() > 0) cv::imshow("keypoints", im_with_keypoints );
          cv::imshow("heads", FimgThresholded );
          cv::imshow("leds", LimgThresholded );
+         cv::imshow("image",image);
         ////// end of image testing.
         cv::waitKey(1);
 

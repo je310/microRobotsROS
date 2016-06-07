@@ -47,7 +47,7 @@ class activity_node{
     ros::Subscriber joySub;
     ros::Publisher instructionPush;
     bool isInit= 0;
-    vector<RobotClass> robotInterface;
+    vector<RobotClass*> robotInterface;
     int number_robots;
     ros::NodeHandle nh_;
 
@@ -67,7 +67,7 @@ activity_node::activity_node(int robotNum){
     isInitSub= nh_.subscribe("urobot_init_node/isInit", 1,&activity_node::isInitCB,this);
     //do launching of stuff here, find all the robots and give them names. When complete call the 'publishIsInit' function. This is best to hapen only once, so lauch this node last and have others wait for this signal.
     for(int i= 0; i < number_robots; i ++){
-        RobotClass newRobot(nh_,i,0);
+        RobotClass* newRobot = new RobotClass(nh_,i,1);
         robotInterface.push_back(newRobot);
     }
 
@@ -102,7 +102,7 @@ void activity_node::joyCB(const sensor_msgs::JoyConstPtr& msg){
             thisTwist.twist.angular = angular;
             thisTwist.header.stamp = msg->header.stamp;
             //robotInterface.at(i).twistOut = thisTwist;
-            robotInterface.at(i).publishTwist(thisTwist);
+            robotInterface.at(i)->publishTwist(thisTwist);
             ros::spinOnce();
         }
         ros::spinOnce();

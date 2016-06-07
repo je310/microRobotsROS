@@ -143,6 +143,8 @@ void communication_node::sendInstruction(instructionPack thisInstruction){
     instructionUnion myUnion;
     myUnion.pack = thisInstruction;
     write(fd,myUnion.bytes,sizeof(thisInstruction));
+    fsync(fd);
+
 }
 
 //The set_interface_attribs and set_blocking functions were liberated from user wallyk on stack overflow. http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c
