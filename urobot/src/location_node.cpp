@@ -42,21 +42,21 @@ class location_node{
     };
 
     int FLowH = 0;
-    int FHighH = 45;
+    int FHighH = 15;
 
-     int FLowS = 55;
+     int FLowS = 170;
     int FHighS = 255;
 
-     int FLowV = 102;
-    int FHighV = 255;
+     int FLowV = 54;
+    int FHighV = 99;
 
-    int LLowH = 100;
-    int LHighH = 164;
+    int LLowH = 77;
+    int LHighH = 111;
 
-     int LLowS = 44;
-    int LHighS = 182;
+     int LLowS = 0;
+    int LHighS = 66;
 
-     int LLowV = 155;
+     int LLowV = 227;
     int LHighV = 255;
 
     // Setup SimpleBlobDetector parameters.
@@ -64,7 +64,7 @@ class location_node{
 
     cv::Mat image,imgHSV,LimgThresholded,FimgThresholded, extracted;
 
-    int radius = 46; // should be initialised to the number of pixels between the front marker and the led.
+    int radius = 40; // should be initialised to the number of pixels between the front marker and the led.
 
     bool debug = 1;
 
@@ -98,7 +98,8 @@ location_node::location_node(int robotNum, char* argin):it_(nh_){
 
     // Filter by Area.
     params.filterByArea =false;
-    params.minArea = 2;
+    params.minArea = 8;
+    params.maxArea = 150;
 
     // Filter by Circularity
     params.filterByCircularity = false;
@@ -172,7 +173,7 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
         cv::inRange(imgHSV, cv::Scalar(FLowH, FLowS, FLowV), cv::Scalar(FHighH,FHighS, FHighV), FimgThresholded); //Threshold the image
         cv::inRange(imgHSV, cv::Scalar(LLowH, LLowS, LLowV), cv::Scalar(LHighH,LHighS, LHighV), LimgThresholded); //Threshold the image
         //morphological opening (remove small objects from the foreground)
-        int erodeVal = 1;
+        int erodeVal = 2;
         if(erodeVal !=0){
          cv::erode(FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
          cv::dilate( FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
@@ -223,6 +224,7 @@ if(debug){
 if(debug){
          // Show blobs
          if(ourPairs.size() > 0) cv::imshow("keypoints", im_with_keypoints );
+         cv::imshow("raw",image);
          cv::imshow("heads", FimgThresholded );
          cv::imshow("leds", LimgThresholded );
 }
@@ -252,7 +254,8 @@ vector<location_node::pairs> location_node::findPairs(std::vector<cv::KeyPoint> 
             }
 
         }
-        thePairs.push_back(thisPair);
+        if(bestError <2000)thePairs.push_back(thisPair);
+
     }
     return thePairs;
 }

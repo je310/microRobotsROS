@@ -13,13 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
 tf
 )
-
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /usr/local/lib/cmake/)
 find_package(camera_info_manager REQUIRED)
+find_package(raspicam REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package( OpenCV REQUIRED )
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall  -lraspicam ")
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -164,7 +165,15 @@ add_executable(camera_node src/camera_node.cpp)
 
  target_link_libraries(camera_node
    ${catkin_LIBRARIES}
+    ${raspicam_CV_LIBS}
+${raspicam_LIBS}
  )
+
+ IF  ( OpenCV_FOUND AND raspicam_CV_FOUND)
+MESSAGE(STATUS "COMPILING OPENCV TESTS")
+ELSE()
+MESSAGE(FATAL_ERROR "OPENCV NOT FOUND IN YOUR SYSTEM")
+ENDIF()
 
 #############
 ## Install ##

@@ -20,6 +20,8 @@
 #include <math.h>
 #include <unistd.h>
 
+#include <raspicam/raspicam_cv.h>
+
 
 
 using namespace std;
@@ -34,6 +36,7 @@ private:
     image_transport::ImageTransport it_;
     image_transport::CameraPublisher camera;
     boost::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
+    raspicam::RaspiCam_Cv Camera;
 
     int FLowH = 0;
     int FHighH = 23;
@@ -52,14 +55,24 @@ private:
 
      int LLowV = 155;
     int LHighV = 255;
+    int dWidth;
+    int dHeight;
 
 public:
     camera_node(int Hz);
+    cv::Mat image,imgHSV,LimgThresholded,FimgThresholded, extracted;
 
 };
 
 camera_node::camera_node(int Hz):it_(nh_){
-    ros::Rate rate(Hz);
+    Camera.set(CV_CAP_PROP_FRAME_WIDTH, 640  );
+        Camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480  );
+    Camera.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
+    if ( !Camera.open()) {cerr<<"Error opening camera"<<endl;}
+
+
+
+
     string camera_info_url, camera_name;
     camera_name = "fakeCamera";
     cinfo_.reset(new camera_info_manager::CameraInfoManager(nh_, camera_name, camera_info_url));
@@ -76,12 +89,18 @@ camera_node::camera_node(int Hz):it_(nh_){
 
 
     camera =it_.advertiseCamera("/camera",1);
-    cv::Mat image,imgHSV,LimgThresholded,FimgThresholded, extracted;
-    image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
+
+    //image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
+    Camera.grab();
+  Camera.retrieve ( image);
     if(! image.data )                              // Check for invalid input
     {
         cout <<  "Could not open or find the image" << std::endl ;
     }
+    dWidth =image.cols;
+    dHeight = image.rows;
+
+    ROS_INFO("the frame is %d by %d",dWidth,dHeight);
 //     cv::namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
 //    //imshow( "Display window", image );
 //    //Create trackbars in "Control" window
@@ -166,6 +185,8 @@ camera_node::camera_node(int Hz):it_(nh_){
 //         // Show blobs
 //         cv::imshow("keypoints", im_with_keypoints );
 //        ////// end of image testing.
+        Camera.grab();
+          Camera.retrieve ( image);
         sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(cinfo_->getCameraInfo()));
         cv_bridge::CvImage out_msg;
         out_msg.image = image;
@@ -175,7 +196,6 @@ camera_node::camera_node(int Hz):it_(nh_){
         camera.publish(*out_msg.toImageMsg(),*ci);
         cv::waitKey(1);
         ros::spinOnce();
-        rate.sleep();
     }
 
 }
