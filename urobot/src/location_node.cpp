@@ -57,6 +57,7 @@ class location_node{
     int LHighS = 66;
 
      int LLowV = 227;
+
     int LHighV = 255;
 
     // Setup SimpleBlobDetector parameters.
@@ -135,6 +136,7 @@ location_node::location_node(int robotNum, char* argin):it_(nh_){
 
      cvCreateTrackbar("LLowV", "Control", &LLowV, 255); //Value (0 - 255)
     cvCreateTrackbar("LHighV", "Control", &LHighV, 255);
+
 
     cvCreateTrackbar("radius", "Control", &radius, 255);
 
