@@ -100,11 +100,12 @@ camera_node::camera_node(int Hz):it_(nh_){
     Camera.grab();
   Camera.retrieve ( image);
 #else
-    image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
+    image = cv::imread("../../../../src/urobot/src/wellLit.jpg");
+    ros::Rate theRate(Hz);
 #endif
     if(! image.data )                              // Check for invalid input
     {
-        cout <<  "Could not open or find the image" << std::endl ;
+        cout <<  "Could not open or find the image"<< std::endl ;
     }
     dWidth =image.cols;
     dHeight = image.rows;
@@ -197,6 +198,8 @@ camera_node::camera_node(int Hz):it_(nh_){
 #ifdef __ARM__
         Camera.grab();
           Camera.retrieve ( image);
+#else
+        theRate.sleep();
 #endif
         sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(cinfo_->getCameraInfo()));
         cv_bridge::CvImage out_msg;
@@ -214,7 +217,7 @@ camera_node::camera_node(int Hz):it_(nh_){
 
 
 int main(int argc, char** argv) {
-
+    std::cout << argv[0];
     //ros setup
     ros::init(argc, argv, "camera_node");
     camera_node CN(30);

@@ -18,6 +18,7 @@ find_package(camera_info_manager REQUIRED)
 if (ARM)
     find_package(raspicam)
 endif (ARM)
+SET(CMAKE_BUILD_TYPE Debug)
 
 
 ## System dependencies are found with CMake's conventions
