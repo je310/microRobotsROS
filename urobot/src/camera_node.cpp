@@ -20,7 +20,9 @@
 #include <math.h>
 #include <unistd.h>
 
-#include <raspicam/raspicam_cv.h>
+#ifdef __ARM__
+    #include <raspicam/raspicam_cv.h>
+#endif
 
 
 
@@ -36,8 +38,9 @@ private:
     image_transport::ImageTransport it_;
     image_transport::CameraPublisher camera;
     boost::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
+ #ifdef __ARM__
     raspicam::RaspiCam_Cv Camera;
-
+#endif
     int FLowH = 0;
     int FHighH = 23;
 
@@ -65,11 +68,13 @@ public:
 };
 
 camera_node::camera_node(int Hz):it_(nh_){
+#ifdef __ARM__
     Camera.set(CV_CAP_PROP_FRAME_WIDTH, 640  );
         Camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480  );
     Camera.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
-    if ( !Camera.open()) {cerr<<"Error opening camera"<<endl;}
 
+    if ( !Camera.open()) {cerr<<"Error opening camera"<<endl;}
+#endif
 
 
 
@@ -91,8 +96,12 @@ camera_node::camera_node(int Hz):it_(nh_){
     camera =it_.advertiseCamera("/camera",1);
 
     //image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
+#ifdef __ARM__
     Camera.grab();
   Camera.retrieve ( image);
+#else
+    image = cv::imread("/home/god/uRobot_ws/src/urobot/src/wellLit.jpg");
+#endif
     if(! image.data )                              // Check for invalid input
     {
         cout <<  "Could not open or find the image" << std::endl ;
@@ -185,8 +194,10 @@ camera_node::camera_node(int Hz):it_(nh_){
 //         // Show blobs
 //         cv::imshow("keypoints", im_with_keypoints );
 //        ////// end of image testing.
+#ifdef __ARM__
         Camera.grab();
           Camera.retrieve ( image);
+#endif
         sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(cinfo_->getCameraInfo()));
         cv_bridge::CvImage out_msg;
         out_msg.image = image;
