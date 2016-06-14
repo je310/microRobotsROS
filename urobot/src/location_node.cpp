@@ -46,7 +46,7 @@ class location_node{
     };
     ros::Subscriber isInitSub;
     bool isInit= 0;
-    static const int numberFedu = 4;
+    static const int numberFedu = 1;
     cv::Point2f camWobble;  // stored so that we can search a min bounding box for feducials. then Min bounding boxes are more possible for the robots.
     int isSetup = 0; // are we happy with the thresholds and the wobble perameters.
     vector<RobotClass*> robotInterface;
@@ -85,10 +85,10 @@ class location_node{
 
     // Setup SimpleBlobDetector parameters.
     cv::SimpleBlobDetector::Params params;
-
+public:
     cv::Mat image;
 
-    int radius = 36; // should be initialised to the number of pixels between the front marker and the led.
+    int radius = 15; // should be initialised to the number of pixels between the front marker and the led.
 
     bool debug = 1;
 
@@ -220,8 +220,8 @@ void location_node::doMouseCallback(int event, int x, int y, int flags){
     case 4:
         if(event == EVENT_LBUTTONDOWN){
            loadScreen(1);
-           fiduSearch = 50;
-           robotSearch = 50;
+           fiduSearch = 25;
+           robotSearch = 25;
            isSetup = 0;
         }
         break;
@@ -243,7 +243,7 @@ location_node::location_node(int robotNum, char* argin):it_(nh_){
         RobotClass* newRobot = new RobotClass(nh_,i,1);
         robotInterface.push_back(newRobot);
     }
-
+    image = cv::imread("/home/josh/uRobot_ws/src/urobot/src/niceLight.jpg");
 
     leftBut.botL.x = 50;
     leftBut.botL.y = 400;
@@ -336,7 +336,7 @@ void location_node::thesholdImage(cv::Mat &imageIn,bool needHead,std::vector<cv:
     if(needHead) cv::inRange(imgHSV, cv::Scalar(FLowH, FLowS, FLowV), cv::Scalar(FHighH,FHighS, FHighV), FimgThresholded); //Threshold the image
     if(needLED)cv::inRange(imgHSV, cv::Scalar(LLowH, LLowS, LLowV), cv::Scalar(LHighH,LHighS, LHighV), LimgThresholded); //Threshold the image
 
-    int erodeVal = 2;
+    int erodeVal = 0;
     if(erodeVal !=0){
         if(needHead){
             cv::erode(FimgThresholded, FimgThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeVal,erodeVal)) );
@@ -406,9 +406,10 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
         return;
     }
     image = cv_ptr->image;
+    
     if(isSetup){
 
-        //#pragma omp parallel for
+      // #pragma omp parallel for
         for(int i = 0; i < numberFedu; i++){
             std::vector<cv::KeyPoint> Fkeypoints,Lkeypoints;
             Rect R =getSafeRect( fiducialPoints[i],fiduSearch,image);
@@ -424,9 +425,9 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
                 fiducialPoints[i] = Fkeypoints[0].pt +offset;
             }
         }
-        fiduSearch = 20;
+        fiduSearch = 10;
         kPoints ourPairs[number_robots];
-       // #pragma omp parallel for
+      //	#pragma omp parallel for 
         for(int i = 0; i < number_robots; i++){
             std::vector<cv::KeyPoint> Fkeypoints,Lkeypoints;
             geometry_msgs::Point position = robotInterface[i]->position;
@@ -449,21 +450,19 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
                 ourPairs[i] = winner;
             }
         }
-        robotSearch = 35;
+        robotSearch = 20;
 
 
-        cv::Mat im_with_keypoints;
-        image.copyTo(im_with_keypoints);
 
         for(int i = 0;  i < number_robots; i++){
             if(ourPairs[i].error <130){
                 if(shouldUpdate){
-                    cv::circle(im_with_keypoints, ourPairs[i].led, radius, cv::Scalar(0,0,255) );
+                    cv::circle(image, ourPairs[i].led, radius, cv::Scalar(0,0,255) );
 
 
-                    line(im_with_keypoints,ourPairs[i].led, ourPairs[i].head, cv::Scalar(255,0,255));
+                    line(image,ourPairs[i].led, ourPairs[i].head, cv::Scalar(255,0,255));
                     cv::Point2f centre = 0.55*ourPairs[i].led + 0.45*ourPairs[i].head;
-                    cv::circle(im_with_keypoints, centre, 3, cv::Scalar(0,0,255) );
+                    cv::circle(image, centre, 3, cv::Scalar(0,0,255) );
                 }
                 //get robot IDS here.
                 robotInterface.at(i)->publishTF(ourPairs[i].led,ourPairs[i].head, msg->header.stamp);
@@ -475,15 +474,14 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
             Point2i lineLengthx, lineLengthy;
             lineLengthx.x = 10;
             lineLengthy.y = 10;
-            line(im_with_keypoints,fiducialPoints[i]+lineLengthx, fiducialPoints[i]-lineLengthx, cv::Scalar(255,0,255));
-            line(im_with_keypoints,fiducialPoints[i]+lineLengthy, fiducialPoints[i]-lineLengthy, cv::Scalar(255,0,255));
+            line(image,fiducialPoints[i]+lineLengthx, fiducialPoints[i]-lineLengthx, cv::Scalar(255,0,255));
+            line(image,fiducialPoints[i]+lineLengthy, fiducialPoints[i]-lineLengthy, cv::Scalar(255,0,255));
         }
         }
         if(debug){
             // Show blobs
-            cvNamedWindow("keypoints", CV_WINDOW_NORMAL); cv::imshow("keypoints", im_with_keypoints );
+            cvNamedWindow("keypoints", CV_WINDOW_NORMAL); cv::imshow("keypoints", image );
             cvNamedWindow("raw", CV_WINDOW_NORMAL);
-            cv::imshow("raw",image);
         }
 
 
@@ -494,9 +492,11 @@ void location_node::imageCB(const sensor_msgs::ImageConstPtr& msg){
         if(shouldUpdate){
             std::ostringstream buff;
             buff<<fps;
-            cv::putText(im_with_keypoints, buff.str().c_str(), cvPoint( 25,im_with_keypoints.rows - 25),
+            cv::putText(image, buff.str().c_str(), cvPoint( 25,image.rows - 25),
                         FONT_HERSHEY_COMPLEX_SMALL, 1, cvScalar(0,0,0), 1, CV_AA);
-            cv::imshow("interface", im_with_keypoints );
+            cv::imshow("interface", image );
+            ROS_INFO(buff.str().c_str());
+            cout<< buff.str()<<endl;
         }
     }
     ////// end of image testing.

@@ -100,7 +100,7 @@ camera_node::camera_node(int Hz):it_(nh_){
     Camera.grab();
   Camera.retrieve ( image);
 #else
-    image = cv::imread("/home/god/uRobot_ws/src/urobot/src/niceLight.jpg");
+    image = cv::imread("/home/josh/uRobot_ws/src/urobot/src/niceLight.jpg");
     cout <<  "../../../src/urobot/src/niceLight.jpg"<< std::endl ;
     ros::Rate theRate(Hz);
     ROS_INFO("camera frame rate is %d Hz",Hz);
@@ -224,6 +224,6 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "camera_node");
     for(int i = 0; i < argc; i++) ROS_INFO(argv[i]);
 
-    camera_node CN(30);
+    camera_node CN(600);
     return 0;
 }
