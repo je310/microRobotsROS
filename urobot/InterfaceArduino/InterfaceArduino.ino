@@ -16,10 +16,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include <IRremoteInt.h>
-#include <IRremote.h>
-IRsend irsend;
-#include "/home/josh/uRobot_ws/src/urobot/src/rosToInterface.hpp"
+#include <SoftwareSerial.h>
+
+#include "rosToInterface.hpp"
 #define numberOfRobots  1 //this should be set up nicly
 #define myID 0
 int LED = 13;
@@ -27,12 +26,49 @@ char commandQ[numberOfRobots + 1]; //one for the command type
 void addEntry(instructionUnion thisUnion);
 void sendIR();
 int robotsRecieved = 0;
+const int IROUT = 11;
+const int IRRecvPin = 3;
+
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+#define SYSCLOCK 16000000  // main system clock (Hz)
+#define PULSECLOCK 38000  // Hz
+
+SoftwareSerial irserial(IRRecvPin,-1);
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   Serial.begin(115200);
+  irserial.begin(2400);
+  cbi(TCCR2A,COM2A1) ; // connect OC2A (COM2A0 = 1)
+  sbi(TCCR2A,COM2A0) ;
+ 
+  cbi(TCCR2B,WGM22) ;  // CTC mode for TIMER2
+  sbi(TCCR2A,WGM21) ;
+  cbi(TCCR2A,WGM20) ;
+  
+  TCNT2 = 0 ;
+  
+  cbi(ASSR,AS2) ;  // use system clock for timer 2
+  
+  OCR2A = 255 ;   // set TOP to 255 for now
+  
+  cbi(TCCR2B,CS22) ;  // TIMER2 prescale = 1
+  cbi(TCCR2B,CS21) ;
+  sbi(TCCR2B,CS20) ;
+  
+  cbi(TCCR2B,FOC2A) ;  // clear forced output compare bits
+  cbi(TCCR2B,FOC2B) ;
+ 
+  pinMode(IROUT, OUTPUT) ;  // set OC2A to OUPUT  
+  OCR2A = timer2top(PULSECLOCK) ;
+  sei() ;
 }
 instructionUnion thisUnion;
 int bytesCollected = 0;
@@ -63,26 +99,12 @@ void addEntry(instructionUnion thisUnion){
 }
 
 void sendIR(){
-  switch(commandQ[0]){
-    case CmdLINANG:
-    digitalWrite(LED, HIGH);
-    int8_t lin = commandQ[1] & 0b11110000;
-    int8_t ang = commandQ[1] & 0b00001111;
-    lin = lin >> 4;
-    if(ang & 0b00001000){ //extend the top bit to recover 2s comp.
-      ang = ang | 0b11110000;
-    }
-    if(lin == 1){
-      irsend.sendSony(0xFF9867, 32);
-    }
-    if(lin == - 1){
-      irsend.sendSony(0xFF38C7, 32);
-    }
-    if(ang == 1){
-      irsend.sendSony(0xFF30CF, 32);
-    }
-    if(ang == - 1){
-      irsend.sendSony(0xFF7A85, 32);
-    }
-  };
+
+  Serial.write(commandQ, sizeof(commandQ)); 
+
+}
+
+// return TIMER2 TOP value per given desired frequency (Hz)
+uint8_t timer2top(unsigned long freq) {
+ return((byte)((unsigned long)SYSCLOCK/2/freq) - 1) ;
 }

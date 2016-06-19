@@ -1,5 +1,8 @@
+#include <SoftwareSerial.h>
+
 #include "Timer-master/Timer.h"
 #include "Timer-master/Event.h"
+#include "rosToInterface.hpp"
 
 #define CLR(x,y) (x&=(~(1<<y)))
 #define SET(x,y) (x|=(1<<y))
@@ -15,10 +18,11 @@
 // https://arduino-info.wikispaces.com/IR-RemoteControl this is where the codes are 
 
 
-
-
+const int MyRobotNumber = 0;
+const int NumRobots = 1;
 
 int RECV_PIN = 4;
+SoftwareSerial serial(RECV_PIN,-1);
 int sensorPower = 12;
 int ir2 = A3;
 IRrecv irrecv(RECV_PIN);
@@ -35,6 +39,9 @@ int dirRight = 1;
 int speedLeft = 275;
 int speedRight = 275;
 
+const int maxspeed = 275;
+const int minspeed = 30000;
+
 int movingLeft = 0;
 int movingRight = 0;
 
@@ -47,6 +54,7 @@ int deactivateLeft;
 int deactivateRight;
 int RCTimout;
 
+using namespace std;
 
 void motorLeftUpdate(){
   if(movingLeft) stepLeft(dirLeft);
@@ -60,23 +68,34 @@ if (movingRight) stepRight(dirRight);
 void followLine();
 
 void checkBatt(){
-     int batteryReading = analogRead(battery);
-   if(batteryReading < 300) {
-     lightRedLED();
-     lightBlueLED();
-   }
-   if(batteryReading >630) lightGreenLED();
-   if(batteryReading > 300 && batteryReading < 480) lightRedLED();
-   if(batteryReading > 480 && batteryReading < 640) lightBlueLED();
+ int batteryReading = analogRead(battery);
+ if(batteryReading < 300) {
+   lightRedLED();
+   lightBlueLED();
+ }
+ if(batteryReading >630)
+   lightGreenLED();
+ if(batteryReading > 300 && batteryReading < 480)
+   lightRedLED();
+ if(batteryReading > 480 && batteryReading < 640) lightBlueLED();
+
+   LEDsOff();
 }
 
 void RCTimoutCB(){
-          movingLeft =0;
-        movingRight =0;
- looseMotors(); 
+   movingLeft =0;
+   movingRight =0;
+   looseMotors(); 
 }
+
+enum {
+  nostate,
+  linang,
+} state;
+
 // the setup function runs once when you press reset or power the board
 void setup() {
+  serial.begin(2400);
   pinMode(A0,INPUT);
   pinMode(sensorPower,OUTPUT);
   digitalWrite(sensorPower,HIGH);
@@ -88,132 +107,87 @@ void setup() {
   motorLeftEvent = t.every(speedLeft, motorLeftUpdate);
   motorRightEvent = t.every(speedRight, motorRightUpdate);
   RCTimout = t.after(100000,RCTimoutCB);
+
+  state = nostate;
 }
 int savedLeft = 0;
 // the loop function runs over and over again forever
-void loop() {
-  if (irrecv.decode(&results)){
-    lightBlueLED();
-    if(translateIR(results) == 2){
-        dirLeft = 0;
-        dirRight = 0;
-        movingLeft = 1;
-        movingRight =1;
-        lightGreenLED();
-    }
-     if(translateIR(results) == 5){
-        followLine();
-    }
-    if(translateIR(results) == 8){
-        dirLeft =1;
-        dirRight = 1;
-        movingLeft = 1;
-        movingRight =1;
-        lightGreenLED();
-    }
-        if(translateIR(results) == 4){
-        dirLeft = 1;
-        dirRight = 0;
-        movingLeft = 1;
-        movingRight =1;
-        lightGreenLED();
-    }
-    if(translateIR(results) == 6){
-        dirLeft =0;
-        dirRight = 1;
-        movingLeft = 1;
-        movingRight =1;
-        lightGreenLED();
-    }
-        if(translateIR(results) == 1){
-          speedLeft --;
-          if (speedLeft ==0) speedLeft = 1;
-          speedRight = speedLeft;
-          t.stop(motorLeftEvent);
-          t.stop(motorRightEvent);
-          motorLeftEvent = t.every(speedLeft, motorLeftUpdate);
-          motorRightEvent = t.every(speedRight, motorRightUpdate);
-        lightGreenLED();
-    }
-    if(translateIR(results) == 3){
-          speedLeft ++;
-          speedRight = speedLeft;
-          t.stop(motorLeftEvent);
-          t.stop(motorRightEvent);
-          motorLeftEvent = t.every(speedLeft, motorLeftUpdate);
-          motorRightEvent = t.every(speedRight, motorRightUpdate);
-        lightGreenLED();
-    }
-    t.stop(RCTimout);
-    RCTimout = t.after(100000,RCTimoutCB);
-    irrecv.resume(); // Receive the next value
+
+
+size_t linangpointer;
+unsigned char linangbuffer[NumRobots];
+
+void RunLinAng(){
+  lightRedLED();
+  
+  const unsigned linang = linangbuffer[MyRobotNumber];
+  const int8_t lin = (linang & 0b11110000) >> 4;
+  int8_t ang = linang & 0b00001111;
+
+  if(ang & 0b00001000){
+    ang |= 0b11110000;
   }
+  const float flin = abs(lin) / 127.0f;
+  const float fang = abs(ang) / 127.0f;
+
+  const int lvel = (minspeed - maxspeed)*(1-flin)*(1+fang) + maxspeed;
+  const int rvel = (minspeed - maxspeed)*(1-flin)*(1-fang) + maxspeed;
+
+  speedLeft = lvel;
+  speedRight = rvel;
+
+  t.stop(motorLeftEvent);
+  t.stop(motorRightEvent);
+  motorLeftEvent = t.every(speedLeft, motorLeftUpdate);
+  motorRightEvent = t.every(speedRight, motorRightUpdate);
+  movingLeft = 1;
+  movingRight =1;
+  
+  dirLeft = 1;
+  dirRight = 1;
+}
+
+
+void loop() {
+  unsigned char ch;
+  int n, i;
+
+ 
+  n = serial.available() ;
+  if (n > 0) {
+    i = n ;
+    while (i--) {
+      ch = serial.read() ;
+      switch (state){
+        case nostate:
+        switch(ch){
+          case CmdLINANG:
+            state = linang;
+            linangpointer = 0;   
+            break;
+ 
+          default:
+          break;
+        }
+        break;
+        
+      case linang:
+        linangbuffer[linangpointer++] = ch;
+        if (linangpointer == NumRobots){
+          RunLinAng();
+          state = nostate;
+        }
+        break;
+
+      default:
+        break;
+      }
+    }
+  }
+  
   //delay(10);              // wait for a second
-   t.update();
-
-  LEDsOff();
-
+  t.update();
 
 
 }
-
-void followLine(){
-  LEDsOff();
-  int thresh;
-  int offset1 = 20;
-  int offset2 = 30;
-  digitalWrite(sensorPower,LOW);
-  thresh = analogRead(ir2);
-  
-  while(1){
-    LEDsOff();
-    t.update();
-    digitalWrite(sensorPower,LOW);
-     int value  = analogRead(ir2);
-     digitalWrite(sensorPower,HIGH);
-     
-     //forwards
-     if(value > thresh - offset1 && value < thresh + offset1){
-        dirLeft = 0;
-        dirRight = 0;
-        movingLeft = 1;
-        movingRight =1;
-     }
-     else{
-       //turn one way
-       if(value > thresh + offset1 && value < thresh +offset1 + offset2){
-         //turn steeply
-            dirLeft = 0;
-            dirRight = 0;
-            movingLeft = 0;
-            movingRight =1;
-       }
-         //turn shallowly
-       if(value > thresh +offset1 + offset2){
-            dirLeft = 1;
-            dirRight = 0;
-            movingLeft = 1;
-            movingRight =1;           
-       }
-       
-       //turn the other way
-       if(value > thresh - offset1 - offset2 && value < thresh -offset1){
-            dirLeft = 0;
-            dirRight = 0;
-            movingLeft = 1;
-            movingRight =0;           
-         }
-         //turn shallowly
-         if(value < thresh - offset1 - offset2 ){
-            dirLeft = 0;
-            dirRight = 1;
-            movingLeft = 1;
-            movingRight =1;           
-         }
-       }
-     }
-     
-  }
-  
-
 
