@@ -1,12 +1,12 @@
-#include <Event.h>
-#include <Timer.h>
+#include "Timer-master/Timer.h"
+#include "Timer-master/Event.h"
 
 #define CLR(x,y) (x&=(~(1<<y)))
 #define SET(x,y) (x|=(1<<y))
 
-#include <IRremote.h>
-#include <IRremoteInt.h>
-#include "TimerObject.h"
+#include "IRremote/IRremote.h"
+#include "IRremote/IRremoteInt.h"
+
 #include "LED.h"
 #include "ir.h"
 #include "stepper.h"
@@ -32,8 +32,8 @@ int checkIR = 0;
 int dirLeft = 1;
 int dirRight = 1;
 
-int speedLeft = 1;
-int speedRight = 1;
+int speedLeft = 275;
+int speedRight = 275;
 
 int movingLeft = 0;
 int movingRight = 0;
@@ -84,10 +84,10 @@ void setup() {
   // initialize digital pin 13 as an output.
   setupLED();
   //motorLeft->setOnTimer(&motorLeftUpdate);
-  batteryEvent = t.every(1000, checkBatt);
+  batteryEvent = t.every(1000000, checkBatt);
   motorLeftEvent = t.every(speedLeft, motorLeftUpdate);
   motorRightEvent = t.every(speedRight, motorRightUpdate);
-  RCTimout = t.after(100,RCTimoutCB);
+  RCTimout = t.after(100000,RCTimoutCB);
 }
 int savedLeft = 0;
 // the loop function runs over and over again forever
@@ -145,7 +145,7 @@ void loop() {
         lightGreenLED();
     }
     t.stop(RCTimout);
-    RCTimout = t.after(100,RCTimoutCB);
+    RCTimout = t.after(100000,RCTimoutCB);
     irrecv.resume(); // Receive the next value
   }
   //delay(10);              // wait for a second
