@@ -28,6 +28,8 @@ endif()
 
 find_package(TBB)
 
+find_package(OpenCV 3.1.0 REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 ##find_package( OpenCV REQUIRED )
@@ -133,6 +135,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -172,12 +175,14 @@ add_executable(camera_node src/camera_node.cpp)
 
  target_link_libraries(location_node
    ${catkin_LIBRARIES}
+   ${OpenCV_LIBRARIES}
  )
 
  target_link_libraries(camera_node
    ${catkin_LIBRARIES}
     ${raspicam_CV_LIBS}
 ${raspicam_LIBS}
+${OpenCV_LIBRARIES}
  )
 
 
